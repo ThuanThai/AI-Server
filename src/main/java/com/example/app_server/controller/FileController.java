@@ -5,7 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -20,24 +22,18 @@ public class FileController {
 
     @PostMapping("/upload")
     public ResponseEntity<String> handleFileUpload(@RequestParam("file")MultipartFile file) {
-        try {
-            File convertedFile = new File("converted.docx");
-            if (!convertedFile.exists()) {
-                convertedFile.createNewFile();
-            }
-            //transfer MultipartFile to target file
-           try( OutputStream os = new FileOutputStream(convertedFile)){
-               os.write(file.getBytes());
-           }
-            // Call the conversion service
-            fileService.covertDocToXml(convertedFile);
-            // You can return the XML content or any other response as needed
-            return ResponseEntity.ok("done");
-        } catch (IOException e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body("Error converting DOCX to XML");
-        }
-
+       try {
+           File xmlFile = fileService.covertDocToXml(file);
+           fileService.convertXmlToDoc(xmlFile);
+           return ResponseEntity.ok("Done");
+       } catch (IOException e) {
+           e.printStackTrace();
+           return ResponseEntity.status(500).body("Error converting DOCX to XML");
+       } catch (ParserConfigurationException e) {
+           throw new RuntimeException(e);
+       } catch (SAXException e) {
+           throw new RuntimeException(e);
+       }
     }
     @GetMapping
     public String hello() {
